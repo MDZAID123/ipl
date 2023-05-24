@@ -1,0 +1,82 @@
+import streamlit as st
+
+import pickle
+
+import pandas as pd
+
+def add_bg_from_url():
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://assets.bcci.tv/bcci/photos/917/d3cd4d30-c8ae-43fa-a3c8-957893ec7898.jpg");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
+add_bg_from_url()
+
+st.title('Ipl win predictor')
+teams=['Sunrisers Hyderabad',
+ 'Mumbai Indians',
+ 'Royal Challengers Bangalore',
+ 'Kolkata Knight Riders',
+ 'Kings XI Punjab',
+ 'Chennai Super Kings',
+ 'Rajasthan Royals',
+ 'Delhi Capitals']
+
+cities=['Hyderabad', 'Bangalore', 'Mumbai', 'Indore', 'Kolkata', 'Delhi',
+       'Chandigarh', 'Jaipur', 'Chennai', 'Cape Town', 'Port Elizabeth',
+       'Durban', 'Centurion', 'East London', 'Johannesburg', 'Kimberley',
+       'Bloemfontein', 'Ahmedabad', 'Cuttack', 'Nagpur', 'Dharamsala',
+       'Visakhapatnam', 'Pune', 'Raipur', 'Ranchi', 'Abu Dhabi',
+       'Sharjah', 'Mohali', 'Bengaluru']
+# also i will import my ml model to be used here
+pipe=pickle.load(open('pipe.pkl','rb'))
+col1,col2=st.beta_columns(2)
+with col1:
+    batting_team=st.selectbox('select the batting team',sorted(teams))
+
+with col2:
+    bowling_team=st.selectbox('select the bowling team',sorted(teams))
+
+
+
+selected_city=st.selectbox('select the  host city',sorted(cities))
+target=st.number_input('Target')
+col3,col4,col5=st.beta_columns(3)
+
+with col3:
+    score=st.number_input('Score')
+
+with col4:
+    overs=st.number_input('Overs completed')
+
+with col5:
+    wickets=st.number_input('Wickets out')
+
+
+
+if st.button('Predict probability'):
+    run_left=target-score
+    balls_left=120-(overs*6)
+    wickets=10-wickets
+    crr=score/overs
+    rrr=(run_left*6)/balls_left
+
+    input_df=pd.DataFrame({'batting_team':[batting_team],'bowling_team':[bowling_team],'city':[selected_city],'run_left':[run_left],'balls_left':[balls_left],'wickets':[wickets],'total_runs_x':[target],'crr':[crr],'rrr':[rrr]})
+    st.table(input_df)
+    result=pipe.predict_proba(input_df)
+
+    st.text(result)
+    loss=result[0][0]
+    win=result[0][1]
+    st.header(batting_team+"-"+str(round(win*100))+"%")
+    st.header(bowling_team+"-"+str(round(loss*100))+"%")
+    #now we need to define some variable by our own and then pass them into the ml mode
+
